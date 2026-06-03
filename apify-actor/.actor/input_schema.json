@@ -69,25 +69,25 @@
     "delayMs": {
       "title": "Delay between models",
       "type": "integer",
-      "description": "Small wait between eBay requests.",
+      "description": "Small wait between model updates.",
       "default": 1500,
       "minimum": 500,
       "maximum": 10000,
       "editor": "number"
     },
-    "useApifyProxy": {
-      "title": "Use Apify Proxy",
-      "type": "boolean",
-      "description": "Turn this on if eBay returns 403 from the Apify server.",
-      "default": true,
-      "editor": "checkbox"
+    "soldScraperActorId": {
+      "title": "eBay Sold scraper Actor",
+      "type": "string",
+      "description": "Apify Store Actor used to collect eBay sold listings.",
+      "default": "automation-lab/ebay-sold-scraper",
+      "editor": "textfield"
     },
-    "proxyGroups": {
-      "title": "Proxy groups",
-      "type": "array",
-      "description": "Leave empty for the default Apify Proxy. If eBay still blocks, try RESIDENTIAL if your Apify plan allows it.",
-      "editor": "stringList",
-      "prefill": []
+    "apifyToken": {
+      "title": "Apify token",
+      "type": "string",
+      "description": "Normally leave empty when running on Apify. Add your Apify token only if nested Actor calls fail.",
+      "editor": "textfield",
+      "isSecret": true
     }
   },
   "required": ["supabaseUrl", "models"]

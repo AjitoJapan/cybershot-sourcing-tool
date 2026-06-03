@@ -1,6 +1,5 @@
 import { Actor } from "apify";
-import { gotScraping } from "crawlee";
-import * as cheerio from "cheerio";
+import { ApifyClient } from "apify-client";
 
 const DEFAULT_MODELS = [
   "T1", "T2", "T5", "T7", "T9", "T10", "T11", "T20", "T30", "T33",
@@ -8,17 +7,8 @@ const DEFAULT_MODELS = [
   "TX1", "TX5", "TX7", "TX9", "TX10", "TX20", "TX30", "TX55", "TX66", "TX100V", "TX200V", "TX300V"
 ];
 
-const RANKS = [
-  { rank: "S", minSellThrough: 0.30, minListings: 20 },
-  { rank: "A", minSellThrough: 0.15, minListings: 20 },
-  { rank: "B", minSellThrough: 0.08, minListings: 15 },
-  { rank: "C", minSellThrough: 0.03, minListings: 8 },
-  { rank: "D", minSellThrough: 0, minListings: 0 }
-];
-
-const USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36";
-const DIGITAL_CAMERAS_CATEGORY_ID = "31388";
 const MIN_PRICE_USD = 80;
+const DEFAULT_SOLD_SCRAPER_ACTOR_ID = "automation-lab/ebay-sold-scraper";
 const EXCLUDED_TITLE_WORDS = [
   "box only",
   "parts",
@@ -35,22 +25,21 @@ await Actor.main(async () => {
   const input = (await Actor.getInput()) ?? {};
   const supabaseUrl = normalizeSupabaseUrl(input.supabaseUrl || process.env.SUPABASE_URL);
   const serviceRoleKey = input.supabaseServiceRoleKey || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const apifyToken = input.apifyToken || process.env.APIFY_TOKEN;
+  const soldScraperActorId = input.soldScraperActorId || DEFAULT_SOLD_SCRAPER_ACTOR_ID;
   const models = cleanModels(input.models?.length ? input.models : DEFAULT_MODELS);
   const maxSoldItemsPerModel = clamp(Number(input.maxSoldItemsPerModel || 30), 10, 100);
   const delayMs = clamp(Number(input.delayMs || 1500), 500, 10000);
-  const proxyConfiguration = input.useApifyProxy === false
-    ? null
-    : await Actor.createProxyConfiguration({
-      groups: input.proxyGroups?.length ? input.proxyGroups : undefined
-    });
 
   if (!supabaseUrl) throw new Error("Supabase URL is missing.");
   if (!serviceRoleKey) throw new Error("Supabase service role key is missing. Store it only in Apify, not in browser files.");
+  if (!apifyToken) throw new Error("Apify token is missing. Add it to the Apify token input if nested Actor calls fail.");
 
+  const client = new ApifyClient({ token: apifyToken });
   const run = await createRefreshRun(supabaseUrl, serviceRoleKey, {
     status: "running",
     models_count: models.length,
-    note: `Started eBay update for ${models.length} models.`
+    note: `Started eBay sold update for ${models.length} models via ${soldScraperActorId}.`
   });
 
   let updatedModels = 0;
@@ -60,12 +49,21 @@ await Actor.main(async () => {
   try {
     for (const model of models) {
       logInfo(`Updating ${model}`);
-      const result = await updateModel({ model, maxSoldItemsPerModel, supabaseUrl, serviceRoleKey, proxyConfiguration });
+      const result = await updateModel({
+        model,
+        client,
+        soldScraperActorId,
+        maxSoldItemsPerModel,
+        supabaseUrl,
+        serviceRoleKey
+      });
+
       results.push(result);
       if (result.status === "updated") {
         updatedModels += 1;
         totalItems += result.soldItems;
       }
+
       await Actor.pushData(result);
       await sleep(delayMs);
     }
@@ -95,35 +93,39 @@ await Actor.main(async () => {
   });
 });
 
-async function updateModel({ model, maxSoldItemsPerModel, supabaseUrl, serviceRoleKey, proxyConfiguration }) {
+async function updateModel({ model, client, soldScraperActorId, maxSoldItemsPerModel, supabaseUrl, serviceRoleKey }) {
   try {
-    const soldPages = await fetchEbaySearchPages(model, { sold: true, proxyConfiguration });
-    const activePages = await fetchEbaySearchPages(model, { sold: false, proxyConfiguration });
+    const rawItems = await runSoldScraper({
+      client,
+      actorId: soldScraperActorId,
+      model,
+      maxSoldItemsPerModel
+    });
 
-    const soldItems = dedupeByUrl(soldPages.flatMap((page) => parseSoldItems(page.html, model))).slice(0, maxSoldItemsPerModel);
-    const activeCount = Math.max(0, ...activePages.map((page) => parseResultCount(page.html)));
-    const soldCountFromHeading = Math.max(0, ...soldPages.map((page) => parseResultCount(page.html)));
-    const soldCount = soldCountFromHeading || soldItems.length;
+    const soldItems = dedupeByUrl(rawItems.map((item) => normalizeSoldItem(item)))
+      .filter((item) => item.title && titleMatchesModel(item.title, model))
+      .filter((item) => isValidCameraTitle(item.title))
+      .filter((item) => Number.isFinite(item.priceUsd) && item.priceUsd >= MIN_PRICE_USD)
+      .slice(0, maxSoldItemsPerModel);
 
     if (soldItems.length < 3) {
       return {
         model,
         status: "skipped",
-        reason: `Only ${soldItems.length} sold items parsed.`,
-        activeCount,
-        soldCount
+        reason: `Only ${soldItems.length} valid sold items returned by ${soldScraperActorId}.`,
+        soldItems: soldItems.length,
+        searchKeywords: ebayKeywords(model)
       };
     }
 
-    const prices = soldItems.map((item) => item.priceUsd).filter((value) => Number.isFinite(value) && value > 0);
+    const prices = soldItems.map((item) => item.priceUsd);
     const shippingPrices = soldItems.map((item) => item.shippingUsd).filter((value) => Number.isFinite(value) && value >= 0);
     const metrics = buildMetrics({
       model,
       prices,
       shippingPrices,
-      activeCount,
-      soldCount,
-      soldItems
+      soldItems,
+      maxSoldItemsPerModel
     });
 
     await upsertMetric(supabaseUrl, serviceRoleKey, metrics);
@@ -135,32 +137,53 @@ async function updateModel({ model, maxSoldItemsPerModel, supabaseUrl, serviceRo
       avgUsd: metrics.avg_usd,
       lowUsd: metrics.low_usd,
       highUsd: metrics.high_usd,
-      sellThrough: metrics.sell_through,
       rank: metrics.rank,
-      activeCount,
       soldItems: soldItems.length,
-      searchKeywords: ebayKeywords(model)
+      searchKeywords: ebayKeywords(model),
+      sourceActor: soldScraperActorId
     };
   } catch (error) {
     logWarning(`${model} failed: ${error.message}`);
     return {
       model,
       status: "error",
-      reason: String(error.message || error)
+      reason: String(error.message || error),
+      sourceActor: soldScraperActorId
     };
   }
 }
 
-function buildMetrics({ model, prices, shippingPrices, activeCount, soldCount, soldItems }) {
+async function runSoldScraper({ client, actorId, model, maxSoldItemsPerModel }) {
+  const searchQueries = ebayKeywords(model);
+  const input = {
+    searchQueries,
+    maxListingsPerSearch: maxSoldItemsPerModel,
+    minPrice: MIN_PRICE_USD
+  };
+
+  logInfo(`Calling ${actorId} with ${searchQueries.join(" | ")}`);
+  const run = await client.actor(actorId).call(input);
+  const datasetId = run.defaultDatasetId;
+  if (!datasetId) return [];
+
+  const { items } = await client.dataset(datasetId).listItems({
+    clean: true,
+    limit: maxSoldItemsPerModel * searchQueries.length
+  });
+
+  return items || [];
+}
+
+function buildMetrics({ model, prices, shippingPrices, soldItems, maxSoldItemsPerModel }) {
   const sorted = [...prices].sort((a, b) => a - b);
   const avgUsd = round2(average(prices));
   const lowUsd = round2(percentile(sorted, 0.10));
   const highUsd = round2(percentile(sorted, 0.90));
   const avgShippingUsd = round2(shippingPrices.length ? average(shippingPrices) : 0);
-  const listings = activeCount || soldItems.length;
-  const sellThrough = round4(soldCount / Math.max(1, soldCount + listings));
+  const listings = soldItems.length;
+  const sellThrough = round4(Math.min(1, soldItems.length / Math.max(1, maxSoldItemsPerModel)));
   const reliability = soldItems.length >= 20 ? "High" : soldItems.length >= 10 ? "Medium" : "Low";
-  const rank = chooseRank({ sellThrough, listings });
+  const rank = chooseRank({ soldItemsCount: soldItems.length, avgUsd });
 
   return {
     model,
@@ -173,82 +196,17 @@ function buildMetrics({ model, prices, shippingPrices, activeCount, soldCount, s
     listings,
     reliability,
     rank,
-    source: "apify_ebay_sold",
+    source: "apify_store_ebay_sold",
     updated_at: new Date().toISOString()
   };
 }
 
-function chooseRank({ sellThrough, listings }) {
-  return RANKS.find((rule) => sellThrough >= rule.minSellThrough && listings >= rule.minListings)?.rank || "D";
-}
-
-async function fetchEbaySearchPage(model, { sold, proxyConfiguration }) {
-  const search = new URL("https://www.ebay.com/sch/i.html");
-  search.searchParams.set("_nkw", ebayKeywords(model)[0]);
-  search.searchParams.set("_sacat", DIGITAL_CAMERAS_CATEGORY_ID);
-  search.searchParams.set("_ipg", "100");
-  search.searchParams.set("rt", "nc");
-  search.searchParams.set("LH_PrefLoc", "2");
-  search.searchParams.set("_udlo", String(MIN_PRICE_USD));
-  if (sold) {
-    search.searchParams.set("LH_Sold", "1");
-    search.searchParams.set("LH_Complete", "1");
-  }
-
-  const response = await gotScraping({
-    url: search.toString(),
-    proxyUrl: proxyConfiguration ? await proxyConfiguration.newUrl() : undefined,
-    headers: {
-      "User-Agent": USER_AGENT,
-      "Accept-Language": "en-US,en;q=0.9",
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-    }
-  });
-
-  if (response.statusCode < 200 || response.statusCode >= 300) {
-    throw new Error(`eBay returned ${response.statusCode} for ${model}`);
-  }
-
-  return { url: search.toString(), html: response.body };
-}
-
-async function fetchEbaySearchPages(model, { sold, proxyConfiguration }) {
-  const pages = [];
-  for (const keyword of ebayKeywords(model)) {
-    pages.push(await fetchEbaySearchPageByKeyword(model, keyword, { sold, proxyConfiguration }));
-    await sleep(300);
-  }
-  return pages;
-}
-
-async function fetchEbaySearchPageByKeyword(model, keyword, { sold, proxyConfiguration }) {
-  const search = new URL("https://www.ebay.com/sch/i.html");
-  search.searchParams.set("_nkw", keyword);
-  search.searchParams.set("_sacat", DIGITAL_CAMERAS_CATEGORY_ID);
-  search.searchParams.set("_ipg", "100");
-  search.searchParams.set("rt", "nc");
-  search.searchParams.set("LH_PrefLoc", "2");
-  search.searchParams.set("_udlo", String(MIN_PRICE_USD));
-  if (sold) {
-    search.searchParams.set("LH_Sold", "1");
-    search.searchParams.set("LH_Complete", "1");
-  }
-
-  const response = await gotScraping({
-    url: search.toString(),
-    proxyUrl: proxyConfiguration ? await proxyConfiguration.newUrl() : undefined,
-    headers: {
-      "User-Agent": USER_AGENT,
-      "Accept-Language": "en-US,en;q=0.9",
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-    }
-  });
-
-  if (response.statusCode < 200 || response.statusCode >= 300) {
-    throw new Error(`eBay returned ${response.statusCode} for ${model} / ${keyword}`);
-  }
-
-  return { keyword, url: search.toString(), html: response.body };
+function chooseRank({ soldItemsCount, avgUsd }) {
+  if (soldItemsCount >= 25 && avgUsd >= 130) return "S";
+  if (soldItemsCount >= 15) return "A";
+  if (soldItemsCount >= 8) return "B";
+  if (soldItemsCount >= 3) return "C";
+  return "D";
 }
 
 function ebayKeywords(model) {
@@ -259,39 +217,55 @@ function ebayKeywords(model) {
   ];
 }
 
-function parseSoldItems(html, model) {
-  const $ = cheerio.load(html);
-  const items = [];
+function normalizeSoldItem(item) {
+  const title = pickString(item, ["title", "name", "itemTitle"]);
+  const priceUsd = pickNumber(item, ["price", "soldPrice", "priceUsd", "itemPrice", "currentPrice"]);
+  const shippingUsd = pickNumber(item, ["shipping", "shippingPrice", "shippingUsd", "shippingCost"], 0);
+  const itemUrl = pickString(item, ["url", "itemUrl", "link", "itemLink"]);
+  const soldAt = pickDate(item, ["soldDate", "soldAt", "dateSold", "endedAt"]);
+  const condition = pickString(item, ["condition", "itemCondition"]);
 
-  $(".s-item").each((_, element) => {
-    const node = $(element);
-    const title = cleanText(node.find(".s-item__title").first().text());
-    const priceUsd = parseUsd(node.find(".s-item__price").first().text());
-    const shippingUsd = parseShipping(node.find(".s-item__shipping, .s-item__logisticsCost").first().text());
-    const itemUrl = node.find("a.s-item__link").first().attr("href")?.split("?")[0] || null;
-    const soldAt = parseSoldAt(node.text());
+  return {
+    title,
+    priceUsd,
+    shippingUsd,
+    itemUrl,
+    soldAt,
+    condition
+  };
+}
 
-    if (!titleMatchesModel(title, model)) return;
-    if (!isValidCameraTitle(title)) return;
-    if (!Number.isFinite(priceUsd) || priceUsd <= 0) return;
+function pickString(item, keys) {
+  for (const key of keys) {
+    const value = item?.[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
 
-    items.push({
-      title,
-      priceUsd,
-      shippingUsd,
-      itemUrl,
-      soldAt
-    });
-  });
+function pickNumber(item, keys, fallback = NaN) {
+  for (const key of keys) {
+    const value = item?.[key];
+    const parsed = parseUsd(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+}
 
-  return dedupeByUrl(items);
+function pickDate(item, keys) {
+  for (const key of keys) {
+    const value = item?.[key];
+    if (!value) continue;
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) return date.toISOString();
+  }
+  return null;
 }
 
 function isValidCameraTitle(title) {
   const normalized = normalizeTitle(title);
-  if (!normalized || normalized.includes("shop on ebay")) return false;
+  if (!normalized) return false;
   if (!normalized.includes("sony")) return false;
-  if (!normalized.includes("cyber shot") && !normalized.includes("cybershot")) return false;
   if (EXCLUDED_TITLE_WORDS.some((word) => normalized.includes(word))) return false;
   return true;
 }
@@ -309,31 +283,14 @@ function titleMatchesModel(title, model) {
   return variants.some((variant) => compactTitle.includes(variant));
 }
 
-function parseResultCount(html) {
-  const $ = cheerio.load(html);
-  const heading = cleanText($(".srp-controls__count-heading").first().text() || $("h1").first().text());
-  const match = heading.match(/([\d,]+)\s*(?:results?|items?)/i) || heading.match(/^([\d,]+)/);
-  return match ? Number(match[1].replace(/,/g, "")) : 0;
-}
-
-function parseUsd(text) {
-  const normalized = cleanText(text).replace(/,/g, "");
+function parseUsd(value) {
+  if (typeof value === "number") return value;
+  if (value && typeof value === "object") {
+    return parseUsd(value.value ?? value.amount ?? value.price);
+  }
+  const normalized = String(value || "").replace(/,/g, "");
   const match = normalized.match(/\$?\s*(\d+(?:\.\d+)?)/);
   return match ? Number(match[1]) : NaN;
-}
-
-function parseShipping(text) {
-  const normalized = cleanText(text).toLowerCase();
-  if (!normalized || normalized.includes("free")) return 0;
-  return parseUsd(normalized);
-}
-
-function parseSoldAt(text) {
-  const cleaned = cleanText(text);
-  const match = cleaned.match(/Sold\s+([A-Z][a-z]{2}\s+\d{1,2},\s+\d{4})/);
-  if (!match) return null;
-  const date = new Date(`${match[1]} 12:00:00 UTC`);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 function cleanText(text) {
@@ -376,8 +333,9 @@ async function insertSnapshots(supabaseUrl, serviceRoleKey, model, items) {
     title: item.title,
     price_usd: item.priceUsd,
     shipping_usd: item.shippingUsd,
+    condition: item.condition,
     item_url: item.itemUrl,
-    source: "apify_ebay_sold",
+    source: "apify_store_ebay_sold",
     captured_at: new Date().toISOString()
   }));
 
