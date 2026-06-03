@@ -385,7 +385,9 @@ async function insertSnapshots(supabaseUrl, serviceRoleKey, model, items) {
 async function createRefreshRun(supabaseUrl, serviceRoleKey, row) {
   const response = await fetch(`${supabaseUrl}/rest/v1/refresh_runs?select=id`, {
     method: "POST",
-    headers: supabaseHeaders(serviceRoleKey),
+    headers: supabaseHeaders(serviceRoleKey, {
+      Prefer: "return=representation"
+    }),
     body: JSON.stringify({
       provider: "apify",
       ...row,
@@ -398,7 +400,9 @@ async function createRefreshRun(supabaseUrl, serviceRoleKey, row) {
     return null;
   }
 
-  const rows = await response.json();
+  const text = await response.text();
+  if (!text) return null;
+  const rows = JSON.parse(text);
   return rows[0] || null;
 }
 
