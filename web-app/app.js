@@ -89,6 +89,27 @@ function mapSupabaseRow(row) {
   };
 }
 
+function rankWeight(rank) {
+  return { S: 0, A: 1, B: 2, C: 3, D: 4 }[rank] ?? 9;
+}
+
+function naturalModelSort(a, b) {
+  if (rankWeight(a.rank) !== rankWeight(b.rank)) {
+    return rankWeight(a.rank) - rankWeight(b.rank);
+  }
+  return a.model.localeCompare(b.model, "en", { numeric: true });
+}
+
+function formatDateJst(value) {
+  const date = value ? new Date(value) : new Date();
+  return new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(date).replaceAll("/", "-");
+}
+
 async function fetchSupabaseMarketData() {
   if (!hasSupabaseConfig()) return null;
   const base = window.APP_CONFIG.supabaseUrl.replace(/\/$/, "");
@@ -101,7 +122,7 @@ async function fetchSupabaseMarketData() {
   });
   if (!response.ok) throw new Error(`Supabase read failed: ${response.status}`);
   const rows = await response.json();
-  return rows.map(mapSupabaseRow);
+  return rows.map(mapSupabaseRow).sort(naturalModelSort);
 }
 
 function yen(value) {
@@ -232,7 +253,7 @@ async function init() {
       marketData = remoteRows;
       const newest = remoteRows.map((row) => row.updatedAt).filter(Boolean).sort().at(-1);
       if (newest) {
-        document.querySelector("#lastUpdated").textContent = newest.slice(0, 10);
+        document.querySelector("#lastUpdated").textContent = formatDateJst(newest);
       }
     }
   } catch (error) {
