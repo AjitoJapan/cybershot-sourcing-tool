@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cyber-shot T/TX Sourcing</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="topbar">
+        <div>
+          <h1>Cyber-shot T/TX 仕入れ判断</h1>
+          <p>月2回更新予定のeBay相場をもとに、スマホでも仕入れ可否を即チェックできます。</p>
+        </div>
+        <div class="sync-card">
+          <span>最終相場更新</span>
+          <strong id="lastUpdated">2026-06-04</strong>
+        </div>
+      </section>
+
+      <section class="panel controls">
+        <label>
+          型番
+          <select id="modelSelect"></select>
+        </label>
+        <label>
+          配送先
+          <select id="destinationSelect"></select>
+        </label>
+        <label>
+          仕入価格 JPY
+          <input id="purchasePrice" type="number" min="0" step="100" value="1000" />
+        </label>
+        <label>
+          仕入送料 JPY
+          <input id="purchaseShipping" type="number" min="0" step="100" value="0" />
+        </label>
+        <label>
+          追加原価 JPY
+          <input id="extraCost" type="number" min="0" step="100" value="0" />
+        </label>
+      </section>
+
+      <section class="summary-grid">
+        <article class="panel model-card">
+          <div class="section-title">
+            <h2 id="modelName">T1</h2>
+            <span id="rankBadge" class="rank">S</span>
+          </div>
+          <dl class="facts">
+            <div><dt>平均売価</dt><dd id="avgUsd">$0.00</dd></div>
+            <div><dt>下限 / 上限</dt><dd id="rangeUsd">$0.00 / $0.00</dd></div>
+            <div><dt>セルスルー</dt><dd id="sellThrough">0.0%</dd></div>
+            <div><dt>出品数</dt><dd id="listings">0</dd></div>
+            <div><dt>信頼度</dt><dd id="reliability">High</dd></div>
+            <div><dt>CPASS原価</dt><dd id="cpassCost">¥0</dd></div>
+          </dl>
+        </article>
+
+        <article class="panel breakeven-card">
+          <div class="section-title">
+            <h2>赤字ライン</h2>
+          </div>
+          <div class="break-row">
+            <span>損益分岐総額</span>
+            <strong id="breakEvenTotal">$0.00</strong>
+          </div>
+          <div class="break-row">
+            <span>損益分岐商品</span>
+            <strong id="breakEvenItem">$0.00</strong>
+          </div>
+          <p>送料収入 $25 を含めた総額と、商品本体だけの赤字回避ラインです。</p>
+        </article>
+      </section>
+
+      <section class="scenarios" id="scenarioCards"></section>
+
+      <section class="panel table-panel">
+        <div class="section-title">
+          <h2>型番別 指値表</h2>
+          <input id="filterInput" type="search" placeholder="型番で絞り込み" />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>型番</th>
+                <th>Rank</th>
+                <th>平均USD</th>
+                <th>回転指値</th>
+                <th>中間指値</th>
+                <th>粗利指値</th>
+                <th>セルスルー</th>
+              </tr>
+            </thead>
+            <tbody id="modelTable"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <script src="./config.js" onerror="window.APP_CONFIG = window.APP_CONFIG || {}"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
