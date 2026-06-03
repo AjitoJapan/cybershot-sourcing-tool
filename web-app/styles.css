@@ -85,7 +85,7 @@ h1 {
 
 .controls {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 12px;
   padding: 14px;
   margin-bottom: 14px;
@@ -265,10 +265,18 @@ dd {
   overflow-x: auto;
 }
 
+.ranking-panel {
+  margin-bottom: 14px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
   min-width: 760px;
+}
+
+.ranking-table {
+  min-width: 520px;
 }
 
 th,
@@ -293,6 +301,11 @@ th:nth-child(2) {
   text-align: left;
 }
 
+.ranking-table td:first-child,
+.ranking-table th:first-child {
+  width: 64px;
+}
+
 @media (max-width: 860px) {
   .topbar,
   .summary-grid,
@@ -301,7 +314,7 @@ th:nth-child(2) {
   }
 
   .controls {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .facts {

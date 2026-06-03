@@ -28,6 +28,7 @@ automation-lab/ebay-sold-scraper
 - 下限価格
 - 上限価格
 - 平均送料
+- 90日Sold数
 - 信頼度
 - Rank
 
@@ -102,7 +103,7 @@ automation-lab/ebay-sold-scraper
 `Apify token` は通常空欄でOKです。
 もし専用Actor呼び出しでトークンエラーが出た場合だけ、ApifyのAPI tokenを入れます。
 
-## 月2回スケジュール
+## 月1回スケジュール
 
 初回Runが成功したあと、Apifyの **Schedules** から設定します。
 
@@ -110,18 +111,19 @@ automation-lab/ebay-sold-scraper
 
 ```text
 毎月 1日 06:00
-毎月 15日 06:00
 Timezone: Asia/Tokyo
 ```
 
 Cronで入れる場合:
 
 ```text
-0 6 1,15 * *
+0 6 1 * *
 ```
 
 ## 注意
 
 - Apify Storeの専用Actor利用分は有料になる可能性があります。
-- 32機種を月2回回す前に、必ず3機種でテストしてください。
+- 価格計算は、直近90日で取得できたSold実績をこちら側で件数カットせずに使います。
+- 正規のTerapeakセルスルーは取得しないため、疑似セルスルーは表示しません。
+- 32機種を月1回回す前に、必ず少数機種でテストしてください。
 - service role keyはApify内だけに保存し、GitHubやVercelへ入れないでください。

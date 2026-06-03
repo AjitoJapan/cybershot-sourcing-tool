@@ -8,6 +8,8 @@ const DEFAULT_MODELS = [
 ];
 
 const MIN_PRICE_USD = 80;
+const SOLD_SEARCH_LIMIT_PER_QUERY = 1000;
+const DATASET_READ_LIMIT = 10000;
 const DEFAULT_SOLD_SCRAPER_ACTOR_ID = "automation-lab/ebay-sold-scraper";
 const EXCLUDED_TITLE_WORDS = [
   "box only",
@@ -28,7 +30,6 @@ await Actor.main(async () => {
   const apifyToken = input.apifyToken || process.env.APIFY_TOKEN;
   const soldScraperActorId = input.soldScraperActorId || DEFAULT_SOLD_SCRAPER_ACTOR_ID;
   const models = cleanModels(input.models?.length ? input.models : DEFAULT_MODELS);
-  const maxSoldItemsPerModel = clamp(Number(input.maxSoldItemsPerModel || 30), 10, 100);
   const delayMs = clamp(Number(input.delayMs || 1500), 500, 10000);
 
   if (!supabaseUrl) throw new Error("Supabase URL is missing.");
@@ -53,7 +54,6 @@ await Actor.main(async () => {
         model,
         client,
         soldScraperActorId,
-        maxSoldItemsPerModel,
         supabaseUrl,
         serviceRoleKey
       });
@@ -93,20 +93,18 @@ await Actor.main(async () => {
   });
 });
 
-async function updateModel({ model, client, soldScraperActorId, maxSoldItemsPerModel, supabaseUrl, serviceRoleKey }) {
+async function updateModel({ model, client, soldScraperActorId, supabaseUrl, serviceRoleKey }) {
   try {
     const rawItems = await runSoldScraper({
       client,
       actorId: soldScraperActorId,
-      model,
-      maxSoldItemsPerModel
+      model
     });
 
     const soldItems = dedupeByUrl(rawItems.map((item) => normalizeSoldItem(item)))
       .filter((item) => item.title && titleMatchesModel(item.title, model))
       .filter((item) => isValidCameraTitle(item.title))
-      .filter((item) => Number.isFinite(item.priceUsd) && item.priceUsd >= MIN_PRICE_USD)
-      .slice(0, maxSoldItemsPerModel);
+      .filter((item) => Number.isFinite(item.priceUsd) && item.priceUsd >= MIN_PRICE_USD);
 
     if (soldItems.length < 3) {
       return {
@@ -124,8 +122,7 @@ async function updateModel({ model, client, soldScraperActorId, maxSoldItemsPerM
       model,
       prices,
       shippingPrices,
-      soldItems,
-      maxSoldItemsPerModel
+      soldItems
     });
 
     await upsertMetric(supabaseUrl, serviceRoleKey, metrics);
@@ -153,11 +150,11 @@ async function updateModel({ model, client, soldScraperActorId, maxSoldItemsPerM
   }
 }
 
-async function runSoldScraper({ client, actorId, model, maxSoldItemsPerModel }) {
+async function runSoldScraper({ client, actorId, model }) {
   const searchQueries = ebayKeywords(model);
   const input = {
     searchQueries,
-    maxListingsPerSearch: maxSoldItemsPerModel,
+    maxListingsPerSearch: SOLD_SEARCH_LIMIT_PER_QUERY,
     minPrice: MIN_PRICE_USD
   };
 
@@ -168,21 +165,20 @@ async function runSoldScraper({ client, actorId, model, maxSoldItemsPerModel }) 
 
   const { items } = await client.dataset(datasetId).listItems({
     clean: true,
-    limit: maxSoldItemsPerModel * searchQueries.length
+    limit: DATASET_READ_LIMIT
   });
 
   return items || [];
 }
 
-function buildMetrics({ model, prices, shippingPrices, soldItems, maxSoldItemsPerModel }) {
+function buildMetrics({ model, prices, shippingPrices, soldItems }) {
   const sorted = [...prices].sort((a, b) => a - b);
   const avgUsd = round2(average(prices));
   const lowUsd = round2(percentile(sorted, 0.10));
   const highUsd = round2(percentile(sorted, 0.90));
   const avgShippingUsd = round2(shippingPrices.length ? average(shippingPrices) : 0);
   const listings = soldItems.length;
-  const sellThrough = round4(Math.min(1, soldItems.length / Math.max(1, maxSoldItemsPerModel)));
-  const reliability = soldItems.length >= 20 ? "High" : soldItems.length >= 10 ? "Medium" : "Low";
+  const reliability = soldItems.length >= 30 ? "High" : soldItems.length >= 10 ? "Medium" : "Low";
   const rank = chooseRank({ soldItemsCount: soldItems.length, avgUsd });
 
   return {
@@ -192,7 +188,7 @@ function buildMetrics({ model, prices, shippingPrices, soldItems, maxSoldItemsPe
     low_usd: lowUsd,
     high_usd: highUsd,
     avg_shipping_usd: avgShippingUsd,
-    sell_through: sellThrough,
+    sell_through: 0,
     listings,
     reliability,
     rank,
@@ -202,9 +198,9 @@ function buildMetrics({ model, prices, shippingPrices, soldItems, maxSoldItemsPe
 }
 
 function chooseRank({ soldItemsCount, avgUsd }) {
-  if (soldItemsCount >= 25 && avgUsd >= 130) return "S";
-  if (soldItemsCount >= 15) return "A";
-  if (soldItemsCount >= 8) return "B";
+  if (soldItemsCount >= 60 && avgUsd >= 130) return "S";
+  if (soldItemsCount >= 30) return "A";
+  if (soldItemsCount >= 10) return "B";
   if (soldItemsCount >= 3) return "C";
   return "D";
 }

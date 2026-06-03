@@ -42,7 +42,7 @@ const destinations = [
 ];
 
 const settings = {
-  usdJpy: 145,
+  usdJpy: 150,
   feeRate: 0.15,
   fixedFeeJpy: 0,
   packingJpy: 84.43,
@@ -64,9 +64,11 @@ const els = {
   purchasePrice: document.querySelector("#purchasePrice"),
   purchaseShipping: document.querySelector("#purchaseShipping"),
   extraCost: document.querySelector("#extraCost"),
+  usdJpy: document.querySelector("#usdJpy"),
   filterInput: document.querySelector("#filterInput"),
   scenarioCards: document.querySelector("#scenarioCards"),
-  modelTable: document.querySelector("#modelTable")
+  modelTable: document.querySelector("#modelTable"),
+  soldRankingTable: document.querySelector("#soldRankingTable")
 };
 
 function hasSupabaseConfig() {
@@ -81,7 +83,6 @@ function mapSupabaseRow(row) {
     lowUsd: Number(row.low_usd || 0),
     highUsd: Number(row.high_usd || 0),
     avgShippingUsd: Number(row.avg_shipping_usd || 0),
-    sellThrough: Number(row.sell_through || 0),
     listings: Number(row.listings || 0),
     reliability: row.reliability || "Unknown",
     rank: row.rank || "D",
@@ -141,6 +142,10 @@ function numeric(id) {
   return Number(els[id].value || 0);
 }
 
+function syncSettingsFromInputs() {
+  settings.usdJpy = numeric("usdJpy") || 150;
+}
+
 function currentModel() {
   return marketData.find((item) => item.model === els.modelSelect.value) || marketData[0];
 }
@@ -192,8 +197,7 @@ function updateSummary(model) {
   document.querySelector("#rankBadge").textContent = model.rank;
   document.querySelector("#avgUsd").textContent = usd(model.avgUsd);
   document.querySelector("#rangeUsd").textContent = `${usd(model.lowUsd)} / ${usd(model.highUsd)}`;
-  document.querySelector("#sellThrough").textContent = pct(model.sellThrough);
-  document.querySelector("#listings").textContent = model.listings;
+  document.querySelector("#soldCount").textContent = `${model.listings}件`;
   document.querySelector("#reliability").textContent = model.reliability;
   document.querySelector("#cpassCost").textContent = yen(currentDestination().costJpy);
   document.querySelector("#breakEvenTotal").textContent = usd(be.totalUsd);
@@ -233,17 +237,36 @@ function renderTable() {
           <td>${yen(scenarios[0].maxBuyJpy)}</td>
           <td>${yen(scenarios[1].maxBuyJpy)}</td>
           <td>${yen(scenarios[2].maxBuyJpy)}</td>
-          <td>${pct(item.sellThrough)}</td>
+          <td>${item.listings}件</td>
         </tr>
       `;
     }).join("");
 }
 
+function renderSoldRanking() {
+  els.soldRankingTable.innerHTML = [...marketData]
+    .sort((a, b) => {
+      if (b.listings !== a.listings) return b.listings - a.listings;
+      return b.avgUsd - a.avgUsd;
+    })
+    .map((item, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${item.model}</td>
+        <td>${item.listings}件</td>
+        <td>${usd(item.avgUsd)}</td>
+        <td>${item.rank}</td>
+      </tr>
+    `).join("");
+}
+
 function render() {
+  syncSettingsFromInputs();
   const model = currentModel();
   updateSummary(model);
   renderScenarios(model);
   renderTable();
+  renderSoldRanking();
 }
 
 async function init() {
@@ -261,7 +284,7 @@ async function init() {
   }
   els.modelSelect.innerHTML = marketData.map((item) => `<option value="${item.model}">${item.model}</option>`).join("");
   els.destinationSelect.innerHTML = destinations.map((item) => `<option value="${item.label}">${item.label}</option>`).join("");
-  [els.modelSelect, els.destinationSelect, els.purchasePrice, els.purchaseShipping, els.extraCost, els.filterInput].forEach((el) => {
+  [els.modelSelect, els.destinationSelect, els.purchasePrice, els.purchaseShipping, els.extraCost, els.usdJpy, els.filterInput].forEach((el) => {
     el.addEventListener("input", render);
     el.addEventListener("change", render);
   });

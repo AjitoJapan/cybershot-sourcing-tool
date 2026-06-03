@@ -10,13 +10,13 @@ Sony Cyber-shot T/TX series sourcing decision tool for eBay cross-border sales.
 - Calculate CPASS shipping cost
 - Show break-even price
 - Show BUY / caution / skip decisions
-- Read market data from Supabase when configured
+- Read monthly sold-listing market data from Supabase when configured
 
 ## Files
 
 - `web-app/` - static browser app
 - `supabase/schema.sql` - Supabase tables and seed data
-- `apify-actor/` - Apify updater that refreshes market data twice monthly
+- `apify-actor/` - Apify updater that refreshes market data monthly
 
 ## Supabase
 
@@ -27,4 +27,4 @@ Do not put a service role key in browser files.
 
 The Apify Actor lives in `apify-actor/`.
 
-It collects low-frequency eBay sold-listing data for the T/TX model list and updates Supabase. The Supabase service role key must be stored only inside Apify, never in GitHub or Vercel.
+It collects available eBay sold-listing data from the latest 90-day window for the T/TX model list and updates Supabase once per month. The Supabase service role key must be stored only inside Apify, never in GitHub or Vercel.

@@ -11,7 +11,7 @@
       <section class="topbar">
         <div>
           <h1>Cyber-shot T/TX 仕入れ判断</h1>
-          <p>月2回更新予定のeBay相場をもとに、スマホでも仕入れ可否を即チェックできます。</p>
+          <p>月1回更新のeBay 90日Sold相場をもとに、スマホでも仕入れ可否を即チェックできます。</p>
         </div>
         <div class="sync-card">
           <span>最終相場更新</span>
@@ -40,6 +40,10 @@
           追加原価 JPY
           <input id="extraCost" type="number" min="0" step="100" value="0" />
         </label>
+        <label>
+          為替 USD/JPY
+          <input id="usdJpy" type="number" min="1" step="0.1" value="150" />
+        </label>
       </section>
 
       <section class="summary-grid">
@@ -51,8 +55,7 @@
           <dl class="facts">
             <div><dt>平均売価</dt><dd id="avgUsd">$0.00</dd></div>
             <div><dt>下限 / 上限</dt><dd id="rangeUsd">$0.00 / $0.00</dd></div>
-            <div><dt>セルスルー</dt><dd id="sellThrough">0.0%</dd></div>
-            <div><dt>集計Sold数</dt><dd id="listings">0</dd></div>
+            <div><dt>90日Sold数</dt><dd id="soldCount">0</dd></div>
             <div><dt>信頼度</dt><dd id="reliability">High</dd></div>
             <div><dt>CPASS原価</dt><dd id="cpassCost">¥0</dd></div>
           </dl>
@@ -76,6 +79,26 @@
 
       <section class="scenarios" id="scenarioCards"></section>
 
+      <section class="panel table-panel ranking-panel">
+        <div class="section-title">
+          <h2>90日Sold 販売数ランキング</h2>
+        </div>
+        <div class="table-wrap">
+          <table class="ranking-table">
+            <thead>
+              <tr>
+                <th>順位</th>
+                <th>型番</th>
+                <th>90日Sold数</th>
+                <th>平均USD</th>
+                <th>Rank</th>
+              </tr>
+            </thead>
+            <tbody id="soldRankingTable"></tbody>
+          </table>
+        </div>
+      </section>
+
       <section class="panel table-panel">
         <div class="section-title">
           <h2>型番別 指値表</h2>
@@ -91,7 +114,7 @@
                 <th>回転指値</th>
                 <th>中間指値</th>
                 <th>粗利指値</th>
-                <th>セルスルー</th>
+                <th>90日Sold数</th>
               </tr>
             </thead>
             <tbody id="modelTable"></tbody>
