@@ -1,0 +1,13 @@
+{
+  "name": "cybershot-ebay-market-updater",
+  "version": "1.0.0",
+  "description": "Updates Sony Cyber-shot T/TX market metrics from eBay sold listings into Supabase.",
+  "type": "module",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "dependencies": {
+    "apify": "^3.4.2",
+    "cheerio": "^1.0.0"
+  }
+}

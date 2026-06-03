@@ -1,0 +1,10 @@
+{
+  "actorSpecification": 1,
+  "name": "cybershot-ebay-market-updater",
+  "title": "Cyber-shot eBay Market Updater",
+  "description": "Collects eBay sold-listing signals for Sony Cyber-shot T/TX models and updates Supabase market metrics.",
+  "version": "1.0",
+  "buildTag": "latest",
+  "input": "./input_schema.json",
+  "dockerfile": "../Dockerfile"
+}
