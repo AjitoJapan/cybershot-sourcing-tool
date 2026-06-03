@@ -53,7 +53,7 @@ await Actor.main(async () => {
 
   try {
     for (const model of models) {
-      Actor.log.info(`Updating ${model}`);
+      logInfo(`Updating ${model}`);
       const result = await updateModel({ model, maxSoldItemsPerModel, supabaseUrl, serviceRoleKey });
       results.push(result);
       if (result.status === "updated") {
@@ -136,7 +136,7 @@ async function updateModel({ model, maxSoldItemsPerModel, supabaseUrl, serviceRo
       searchKeywords: ebayKeywords(model)
     };
   } catch (error) {
-    Actor.log.warning(`${model} failed: ${error.message}`);
+    logWarning(`${model} failed: ${error.message}`);
     return {
       model,
       status: "error",
@@ -378,7 +378,7 @@ async function insertSnapshots(supabaseUrl, serviceRoleKey, model, items) {
   });
 
   if (!response.ok) {
-    Actor.log.warning(`Snapshot insert failed for ${model}: ${response.status} ${await response.text()}`);
+    logWarning(`Snapshot insert failed for ${model}: ${response.status} ${await response.text()}`);
   }
 }
 
@@ -396,7 +396,7 @@ async function createRefreshRun(supabaseUrl, serviceRoleKey, row) {
   });
 
   if (!response.ok) {
-    Actor.log.warning(`Refresh run create failed: ${response.status} ${await response.text()}`);
+    logWarning(`Refresh run create failed: ${response.status} ${await response.text()}`);
     return null;
   }
 
@@ -415,7 +415,7 @@ async function finishRefreshRun(supabaseUrl, serviceRoleKey, id, row) {
   });
 
   if (!response.ok) {
-    Actor.log.warning(`Refresh run finish failed: ${response.status} ${await response.text()}`);
+    logWarning(`Refresh run finish failed: ${response.status} ${await response.text()}`);
   }
 }
 
@@ -426,6 +426,14 @@ function supabaseHeaders(serviceRoleKey, extra = {}) {
     "Content-Type": "application/json",
     ...extra
   };
+}
+
+function logInfo(message) {
+  console.log(`INFO ${message}`);
+}
+
+function logWarning(message) {
+  console.warn(`WARN ${message}`);
 }
 
 function normalizeSupabaseUrl(value) {
