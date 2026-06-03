@@ -41,6 +41,10 @@ Supabase service role key:
 SupabaseのSettings > API Keysにある secret/service_role のキー
 ```
 
+eBayが `403` を返す場合は、Inputの `Use Apify Proxy` をONにします。
+まずはProxy groupsを空欄のまま試してください。
+それでも拒否される場合は、Apify側で利用できるなら `RESIDENTIAL` を試します。
+
 重要: service role keyはApifyのInputまたはSecretだけに入れます。GitHub、Vercel、ブラウザ用ファイルには絶対に入れません。
 
 ## 初回テスト
@@ -134,6 +138,7 @@ ApifyのCronで入れる場合:
 ## 注意
 
 - eBayのページ構造が変わると、取得できない場合があります。
+- eBayがApifyサーバーからのアクセスを拒否する場合があります。その時はApify Proxyを使います。
 - 取得できない型番があっても、他の型番は更新を続けます。
 - 低頻度運用（月2回）向けです。毎日・高頻度で回す設計ではありません。
 - Service role keyは強い権限を持つため、公開リポジトリへ入れないでください。

@@ -1,4 +1,5 @@
 import { Actor } from "apify";
+import { gotScraping } from "crawlee";
 import * as cheerio from "cheerio";
 
 const DEFAULT_MODELS = [
@@ -37,6 +38,11 @@ await Actor.main(async () => {
   const models = cleanModels(input.models?.length ? input.models : DEFAULT_MODELS);
   const maxSoldItemsPerModel = clamp(Number(input.maxSoldItemsPerModel || 30), 10, 100);
   const delayMs = clamp(Number(input.delayMs || 1500), 500, 10000);
+  const proxyConfiguration = input.useApifyProxy === false
+    ? null
+    : await Actor.createProxyConfiguration({
+      groups: input.proxyGroups?.length ? input.proxyGroups : undefined
+    });
 
   if (!supabaseUrl) throw new Error("Supabase URL is missing.");
   if (!serviceRoleKey) throw new Error("Supabase service role key is missing. Store it only in Apify, not in browser files.");
@@ -54,7 +60,7 @@ await Actor.main(async () => {
   try {
     for (const model of models) {
       logInfo(`Updating ${model}`);
-      const result = await updateModel({ model, maxSoldItemsPerModel, supabaseUrl, serviceRoleKey });
+      const result = await updateModel({ model, maxSoldItemsPerModel, supabaseUrl, serviceRoleKey, proxyConfiguration });
       results.push(result);
       if (result.status === "updated") {
         updatedModels += 1;
@@ -89,10 +95,10 @@ await Actor.main(async () => {
   });
 });
 
-async function updateModel({ model, maxSoldItemsPerModel, supabaseUrl, serviceRoleKey }) {
+async function updateModel({ model, maxSoldItemsPerModel, supabaseUrl, serviceRoleKey, proxyConfiguration }) {
   try {
-    const soldPages = await fetchEbaySearchPages(model, { sold: true });
-    const activePages = await fetchEbaySearchPages(model, { sold: false });
+    const soldPages = await fetchEbaySearchPages(model, { sold: true, proxyConfiguration });
+    const activePages = await fetchEbaySearchPages(model, { sold: false, proxyConfiguration });
 
     const soldItems = dedupeByUrl(soldPages.flatMap((page) => parseSoldItems(page.html, model))).slice(0, maxSoldItemsPerModel);
     const activeCount = Math.max(0, ...activePages.map((page) => parseResultCount(page.html)));
@@ -176,7 +182,7 @@ function chooseRank({ sellThrough, listings }) {
   return RANKS.find((rule) => sellThrough >= rule.minSellThrough && listings >= rule.minListings)?.rank || "D";
 }
 
-async function fetchEbaySearchPage(model, { sold }) {
+async function fetchEbaySearchPage(model, { sold, proxyConfiguration }) {
   const search = new URL("https://www.ebay.com/sch/i.html");
   search.searchParams.set("_nkw", ebayKeywords(model)[0]);
   search.searchParams.set("_sacat", DIGITAL_CAMERAS_CATEGORY_ID);
@@ -189,7 +195,9 @@ async function fetchEbaySearchPage(model, { sold }) {
     search.searchParams.set("LH_Complete", "1");
   }
 
-  const response = await fetch(search, {
+  const response = await gotScraping({
+    url: search.toString(),
+    proxyUrl: proxyConfiguration ? await proxyConfiguration.newUrl() : undefined,
     headers: {
       "User-Agent": USER_AGENT,
       "Accept-Language": "en-US,en;q=0.9",
@@ -197,23 +205,23 @@ async function fetchEbaySearchPage(model, { sold }) {
     }
   });
 
-  if (!response.ok) {
-    throw new Error(`eBay returned ${response.status} for ${model}`);
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw new Error(`eBay returned ${response.statusCode} for ${model}`);
   }
 
-  return { url: search.toString(), html: await response.text() };
+  return { url: search.toString(), html: response.body };
 }
 
-async function fetchEbaySearchPages(model, { sold }) {
+async function fetchEbaySearchPages(model, { sold, proxyConfiguration }) {
   const pages = [];
   for (const keyword of ebayKeywords(model)) {
-    pages.push(await fetchEbaySearchPageByKeyword(model, keyword, { sold }));
+    pages.push(await fetchEbaySearchPageByKeyword(model, keyword, { sold, proxyConfiguration }));
     await sleep(300);
   }
   return pages;
 }
 
-async function fetchEbaySearchPageByKeyword(model, keyword, { sold }) {
+async function fetchEbaySearchPageByKeyword(model, keyword, { sold, proxyConfiguration }) {
   const search = new URL("https://www.ebay.com/sch/i.html");
   search.searchParams.set("_nkw", keyword);
   search.searchParams.set("_sacat", DIGITAL_CAMERAS_CATEGORY_ID);
@@ -226,7 +234,9 @@ async function fetchEbaySearchPageByKeyword(model, keyword, { sold }) {
     search.searchParams.set("LH_Complete", "1");
   }
 
-  const response = await fetch(search, {
+  const response = await gotScraping({
+    url: search.toString(),
+    proxyUrl: proxyConfiguration ? await proxyConfiguration.newUrl() : undefined,
     headers: {
       "User-Agent": USER_AGENT,
       "Accept-Language": "en-US,en;q=0.9",
@@ -234,11 +244,11 @@ async function fetchEbaySearchPageByKeyword(model, keyword, { sold }) {
     }
   });
 
-  if (!response.ok) {
-    throw new Error(`eBay returned ${response.status} for ${model} / ${keyword}`);
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw new Error(`eBay returned ${response.statusCode} for ${model} / ${keyword}`);
   }
 
-  return { keyword, url: search.toString(), html: await response.text() };
+  return { keyword, url: search.toString(), html: response.body };
 }
 
 function ebayKeywords(model) {

@@ -74,6 +74,20 @@
       "minimum": 500,
       "maximum": 10000,
       "editor": "number"
+    },
+    "useApifyProxy": {
+      "title": "Use Apify Proxy",
+      "type": "boolean",
+      "description": "Turn this on if eBay returns 403 from the Apify server.",
+      "default": true,
+      "editor": "checkbox"
+    },
+    "proxyGroups": {
+      "title": "Proxy groups",
+      "type": "array",
+      "description": "Leave empty for the default Apify Proxy. If eBay still blocks, try RESIDENTIAL if your Apify plan allows it.",
+      "editor": "stringList",
+      "prefill": []
     }
   },
   "required": ["supabaseUrl", "models"]
