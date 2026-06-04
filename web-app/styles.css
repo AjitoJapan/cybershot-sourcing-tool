@@ -258,8 +258,17 @@ dd {
 
 .manual-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(190px, 1.1fr) repeat(4, minmax(0, 1fr));
   gap: 10px;
+  align-items: stretch;
+}
+
+.manual-input {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px;
+  background: #f8fbff;
+  color: var(--muted);
 }
 
 .manual-result {
@@ -283,7 +292,7 @@ dd {
   font-size: 20px;
 }
 
-.manual-result:nth-child(3) strong {
+.manual-profit strong {
   color: var(--blue);
 }
 

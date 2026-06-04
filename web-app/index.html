@@ -44,10 +44,6 @@
           為替 USD/JPY
           <input id="usdJpy" type="number" min="1" step="0.1" value="150" />
         </label>
-        <label>
-          手動総額 USD
-          <input id="manualTotalUsd" type="number" min="0" step="0.01" placeholder="例: 168.92" />
-        </label>
       </section>
 
       <section class="summary-grid">
@@ -88,6 +84,14 @@
           <span>入力した総額で即計算</span>
         </div>
         <div class="manual-grid">
+          <label class="manual-input">
+            手動総額 USD
+            <input id="manualTotalUsd" type="number" min="0" step="0.01" placeholder="例: 168.92" />
+          </label>
+          <div class="manual-result manual-profit">
+            <span>想定利益</span>
+            <strong id="manualProfitJpy">¥0</strong>
+          </div>
           <div class="manual-result">
             <span>商品価格</span>
             <strong id="manualItemUsd">$0.00</strong>
@@ -95,10 +99,6 @@
           <div class="manual-result">
             <span>売上合計</span>
             <strong id="manualRevenueJpy">¥0</strong>
-          </div>
-          <div class="manual-result">
-            <span>想定利益</span>
-            <strong id="manualProfitJpy">¥0</strong>
           </div>
           <div class="manual-result">
             <span>粗利率</span>
