@@ -93,11 +93,19 @@ function rankWeight(rank) {
   return { S: 0, A: 1, B: 2, C: 3, D: 4 }[rank] ?? 9;
 }
 
-function naturalModelSort(a, b) {
-  if (rankWeight(a.rank) !== rankWeight(b.rank)) {
-    return rankWeight(a.rank) - rankWeight(b.rank);
-  }
+function modelNumberSort(a, b) {
   return a.model.localeCompare(b.model, "en", { numeric: true });
+}
+
+function soldRankingSort(a, b) {
+  if (b.listings !== a.listings) return b.listings - a.listings;
+  if (rankWeight(a.rank) !== rankWeight(b.rank)) return rankWeight(a.rank) - rankWeight(b.rank);
+  if (b.avgUsd !== a.avgUsd) return b.avgUsd - a.avgUsd;
+  return modelNumberSort(a, b);
+}
+
+function soldRankingRows() {
+  return [...marketData].sort(soldRankingSort);
 }
 
 function formatDateJst(value) {
@@ -122,7 +130,7 @@ async function fetchSupabaseMarketData() {
   });
   if (!response.ok) throw new Error(`Supabase read failed: ${response.status}`);
   const rows = await response.json();
-  return rows.map(mapSupabaseRow).sort(naturalModelSort);
+  return rows.map(mapSupabaseRow).sort(soldRankingSort);
 }
 
 function yen(value) {
@@ -226,11 +234,7 @@ function renderScenarios(model) {
 
 function renderSoldRanking() {
   const query = els.filterInput.value.trim().toUpperCase();
-  els.soldRankingTable.innerHTML = [...marketData]
-    .sort((a, b) => {
-      if (b.listings !== a.listings) return b.listings - a.listings;
-      return b.avgUsd - a.avgUsd;
-    })
+  els.soldRankingTable.innerHTML = soldRankingRows()
     .filter((item) => item.model.includes(query))
     .map((item, index) => {
       const scenarios = settings.factors.map((factor) => calcScenario(item, factor));
@@ -270,7 +274,7 @@ async function init() {
   } catch (error) {
     console.warn(error);
   }
-  els.modelSelect.innerHTML = marketData.map((item) => `<option value="${item.model}">${item.model}</option>`).join("");
+  els.modelSelect.innerHTML = soldRankingRows().map((item) => `<option value="${item.model}">${item.model} / ${item.listings}件</option>`).join("");
   els.destinationSelect.innerHTML = destinations.map((item) => `<option value="${item.label}">${item.label}</option>`).join("");
   [els.modelSelect, els.destinationSelect, els.purchasePrice, els.purchaseShipping, els.extraCost, els.usdJpy, els.filterInput].forEach((el) => {
     el.addEventListener("input", render);
