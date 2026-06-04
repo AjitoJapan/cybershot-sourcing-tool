@@ -67,7 +67,6 @@ const els = {
   usdJpy: document.querySelector("#usdJpy"),
   filterInput: document.querySelector("#filterInput"),
   scenarioCards: document.querySelector("#scenarioCards"),
-  modelTable: document.querySelector("#modelTable"),
   soldRankingTable: document.querySelector("#soldRankingTable")
 };
 
@@ -223,41 +222,29 @@ function renderScenarios(model) {
   }).join("");
 }
 
-function renderTable() {
-  const query = els.filterInput.value.trim().toUpperCase();
-  els.modelTable.innerHTML = marketData
-    .filter((item) => item.model.includes(query))
-    .map((item) => {
-      const scenarios = settings.factors.map((factor) => calcScenario(item, factor));
-      return `
-        <tr>
-          <td>${item.model}</td>
-          <td>${item.rank}</td>
-          <td>${usd(item.avgUsd)}</td>
-          <td>${yen(scenarios[0].maxBuyJpy)}</td>
-          <td>${yen(scenarios[1].maxBuyJpy)}</td>
-          <td>${yen(scenarios[2].maxBuyJpy)}</td>
-          <td>${item.listings}件</td>
-        </tr>
-      `;
-    }).join("");
-}
-
 function renderSoldRanking() {
+  const query = els.filterInput.value.trim().toUpperCase();
   els.soldRankingTable.innerHTML = [...marketData]
     .sort((a, b) => {
       if (b.listings !== a.listings) return b.listings - a.listings;
       return b.avgUsd - a.avgUsd;
     })
-    .map((item, index) => `
-      <tr>
-        <td>${index + 1}</td>
-        <td>${item.model}</td>
-        <td>${item.listings}件</td>
-        <td>${usd(item.avgUsd)}</td>
-        <td>${item.rank}</td>
-      </tr>
-    `).join("");
+    .filter((item) => item.model.includes(query))
+    .map((item, index) => {
+      const scenarios = settings.factors.map((factor) => calcScenario(item, factor));
+      return `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${item.model}</td>
+          <td>${item.listings}件</td>
+          <td>${usd(item.avgUsd)}</td>
+          <td>${item.rank}</td>
+          <td>${yen(scenarios[0].maxBuyJpy)}</td>
+          <td>${yen(scenarios[1].maxBuyJpy)}</td>
+          <td>${yen(scenarios[2].maxBuyJpy)}</td>
+        </tr>
+      `;
+    }).join("");
 }
 
 function render() {
@@ -265,7 +252,6 @@ function render() {
   const model = currentModel();
   updateSummary(model);
   renderScenarios(model);
-  renderTable();
   renderSoldRanking();
 }
 

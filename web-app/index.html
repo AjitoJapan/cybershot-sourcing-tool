@@ -81,7 +81,8 @@
 
       <section class="panel table-panel ranking-panel">
         <div class="section-title">
-          <h2>90日Sold 販売数ランキング</h2>
+          <h2>90日Sold 販売数ランキング / 指値表</h2>
+          <input id="filterInput" type="search" placeholder="型番で絞り込み" />
         </div>
         <div class="table-wrap">
           <table class="ranking-table">
@@ -92,32 +93,12 @@
                 <th>90日Sold数</th>
                 <th>平均USD</th>
                 <th>Rank</th>
-              </tr>
-            </thead>
-            <tbody id="soldRankingTable"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="panel table-panel">
-        <div class="section-title">
-          <h2>型番別 指値表</h2>
-          <input id="filterInput" type="search" placeholder="型番で絞り込み" />
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>型番</th>
-                <th>Rank</th>
-                <th>平均USD</th>
                 <th>回転指値</th>
                 <th>中間指値</th>
                 <th>粗利指値</th>
-                <th>90日Sold数</th>
               </tr>
             </thead>
-            <tbody id="modelTable"></tbody>
+            <tbody id="soldRankingTable"></tbody>
           </table>
         </div>
       </section>
