@@ -170,15 +170,16 @@ function totalCost(costs) {
 }
 
 function calcScenario(model, scenario) {
-  const saleUsd = Number((model.avgUsd * scenario.factor).toFixed(2));
-  const revenueJpy = Math.round((saleUsd + settings.shippingIncomeUsd) * settings.usdJpy);
+  const totalSaleUsd = Number((model.avgUsd * scenario.factor).toFixed(2));
+  const itemSaleUsd = Number(Math.max(0, totalSaleUsd - settings.shippingIncomeUsd).toFixed(2));
+  const revenueJpy = Math.round(totalSaleUsd * settings.usdJpy);
   const feeJpy = revenueJpy * settings.feeRate;
   const costs = baseCosts();
   const profitJpy = Math.round(revenueJpy - feeJpy - totalCost(costs));
   const margin = revenueJpy > 0 ? profitJpy / revenueJpy : 0;
   const maxBuyJpy = Math.max(0, Math.floor((revenueJpy * (1 - settings.feeRate) - settings.fixedFeeJpy - settings.packingJpy - settings.domesticShippingJpy - costs.cpass - costs.purchaseShipping - costs.extra - settings.targetProfitJpy) / 100) * 100);
   const status = profitJpy >= settings.targetProfitJpy && margin >= settings.targetMargin ? "BUY" : profitJpy >= settings.cautionProfitJpy ? "要検討" : "見送り";
-  return { ...scenario, saleUsd, revenueJpy, profitJpy, margin, maxBuyJpy, status };
+  return { ...scenario, totalSaleUsd, itemSaleUsd, revenueJpy, profitJpy, margin, maxBuyJpy, status };
 }
 
 function breakEven() {
@@ -209,9 +210,10 @@ function renderScenarios(model) {
     const statusClass = result.status === "BUY" ? "buy" : result.status === "要検討" ? "caution" : "skip";
     return `
       <article class="panel scenario">
-        <h2>${result.label}<span>${usd(result.saleUsd)}</span></h2>
+        <h2>${result.label}<span>総額 ${usd(result.totalSaleUsd)}</span></h2>
         <div class="price">${yen(result.profitJpy)}</div>
         <div class="metrics">
+          <div class="metric"><span>商品価格</span><strong>${usd(result.itemSaleUsd)}</strong></div>
           <div class="metric"><span>売上合計</span><strong>${yen(result.revenueJpy)}</strong></div>
           <div class="metric"><span>粗利率</span><strong>${pct(result.margin)}</strong></div>
           <div class="metric"><span>上限仕入れ価格</span><strong>${yen(result.maxBuyJpy)}</strong></div>

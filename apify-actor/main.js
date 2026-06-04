@@ -116,7 +116,7 @@ async function updateModel({ model, client, soldScraperActorId, supabaseUrl, ser
       };
     }
 
-    const prices = soldItems.map((item) => item.priceUsd);
+    const prices = soldItems.map((item) => item.totalUsd);
     const shippingPrices = soldItems.map((item) => item.shippingUsd).filter((value) => Number.isFinite(value) && value >= 0);
     const metrics = buildMetrics({
       model,
@@ -134,6 +134,7 @@ async function updateModel({ model, client, soldScraperActorId, supabaseUrl, ser
       avgUsd: metrics.avg_usd,
       lowUsd: metrics.low_usd,
       highUsd: metrics.high_usd,
+      priceBasis: "buyer_total_price",
       rank: metrics.rank,
       soldItems: soldItems.length,
       searchKeywords: ebayKeywords(model),
@@ -221,6 +222,7 @@ function normalizeSoldItem(item) {
   const title = pickString(item, ["title", "name", "itemTitle"]);
   const priceUsd = pickNumber(item, ["price", "soldPrice", "priceUsd", "itemPrice", "currentPrice"]);
   const shippingUsd = pickNumber(item, ["shipping", "shippingPrice", "shippingUsd", "shippingCost"], 0);
+  const totalUsd = round2(priceUsd + shippingUsd);
   const itemUrl = pickString(item, ["url", "itemUrl", "link", "itemLink"]);
   const soldAt = pickDate(item, ["soldDate", "soldAt", "dateSold", "endedAt"]);
   const condition = pickString(item, ["condition", "itemCondition"]);
@@ -229,6 +231,7 @@ function normalizeSoldItem(item) {
     title,
     priceUsd,
     shippingUsd,
+    totalUsd,
     itemUrl,
     soldAt,
     condition
@@ -331,7 +334,7 @@ async function insertSnapshots(supabaseUrl, serviceRoleKey, model, items) {
     model,
     sold_at: item.soldAt,
     title: item.title,
-    price_usd: item.priceUsd,
+    price_usd: item.totalUsd,
     shipping_usd: item.shippingUsd,
     condition: item.condition,
     item_url: item.itemUrl,
