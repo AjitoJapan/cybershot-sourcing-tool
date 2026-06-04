@@ -30,7 +30,7 @@
         </label>
         <label>
           仕入価格 JPY
-          <input id="purchasePrice" type="number" min="0" step="100" value="1000" />
+          <input id="purchasePrice" type="number" min="0" step="100" value="5000" />
         </label>
         <label>
           仕入送料 JPY
@@ -44,13 +44,16 @@
           為替 USD/JPY
           <input id="usdJpy" type="number" min="1" step="0.1" value="150" />
         </label>
+        <label>
+          手動総額 USD
+          <input id="manualTotalUsd" type="number" min="0" step="0.01" placeholder="例: 168.92" />
+        </label>
       </section>
 
       <section class="summary-grid">
         <article class="panel model-card">
           <div class="section-title">
             <h2 id="modelName">T1</h2>
-            <span id="rankBadge" class="rank">S</span>
           </div>
           <dl class="facts">
             <div><dt>平均総額</dt><dd id="avgUsd">$0.00</dd></div>
@@ -79,6 +82,32 @@
 
       <section class="scenarios" id="scenarioCards"></section>
 
+      <section class="panel manual-panel">
+        <div class="section-title">
+          <h2>手動売価 粗利計算</h2>
+          <span>入力した総額で即計算</span>
+        </div>
+        <div class="manual-grid">
+          <div class="manual-result">
+            <span>商品価格</span>
+            <strong id="manualItemUsd">$0.00</strong>
+          </div>
+          <div class="manual-result">
+            <span>売上合計</span>
+            <strong id="manualRevenueJpy">¥0</strong>
+          </div>
+          <div class="manual-result">
+            <span>想定利益</span>
+            <strong id="manualProfitJpy">¥0</strong>
+          </div>
+          <div class="manual-result">
+            <span>粗利率</span>
+            <strong id="manualMargin">0.0%</strong>
+          </div>
+        </div>
+        <p>手動総額は購入者が払う「商品価格 + 送料」の合計です。送料$25を引いた商品価格も同時に表示します。</p>
+      </section>
+
       <section class="panel table-panel ranking-panel">
         <div class="section-title">
           <h2>90日Sold 販売数ランキング / 指値表</h2>
@@ -92,7 +121,6 @@
                 <th>型番</th>
                 <th>90日Sold数</th>
                 <th>平均総額USD</th>
-                <th>Rank</th>
                 <th>回転指値</th>
                 <th>中間指値</th>
                 <th>粗利指値</th>
