@@ -206,10 +206,14 @@ function chooseRank({ soldItemsCount, avgUsd }) {
 }
 
 function ebayKeywords(model) {
+  const dscModel = `DSC-${model}`;
   return [
     `SONY Cyber-shot ${model}`,
     `SONY ${model}`,
-    `Cyber-shot ${model}`
+    `Cyber-shot ${model}`,
+    `SONY Cyber-shot ${dscModel}`,
+    `SONY ${dscModel}`,
+    dscModel
   ];
 }
 

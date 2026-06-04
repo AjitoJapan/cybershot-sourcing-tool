@@ -34,12 +34,15 @@ automation-lab/ebay-sold-scraper
 
 ## 検索条件
 
-各型番ごとに3パターンで検索します。
+各型番ごとに、通常表記と正式型番表記の両方で検索します。
 
 ```text
 SONY Cyber-shot T100
 SONY T100
 Cyber-shot T100
+SONY Cyber-shot DSC-T100
+SONY DSC-T100
+DSC-T100
 ```
 
 TX系なら:
@@ -48,6 +51,9 @@ TX系なら:
 SONY Cyber-shot TX30
 SONY TX30
 Cyber-shot TX30
+SONY Cyber-shot DSC-TX30
+SONY DSC-TX30
+DSC-TX30
 ```
 
 共通条件:
