@@ -81,20 +81,20 @@
       <section class="panel manual-panel">
         <div class="section-title">
           <h2>手動売価 粗利計算</h2>
-          <span>入力した総額で即計算</span>
+          <span>商品単価 + 送料$25で即計算</span>
         </div>
         <div class="manual-grid">
           <label class="manual-input">
-            手動総額 USD
-            <input id="manualTotalUsd" type="number" min="0" step="0.01" placeholder="例: 168.92" />
+            手動商品価格 USD
+            <input id="manualItemUsdInput" type="number" min="0" step="0.01" placeholder="例: 145.00" />
           </label>
           <div class="manual-result manual-profit">
             <span>想定利益</span>
             <strong id="manualProfitJpy">¥0</strong>
           </div>
           <div class="manual-result">
-            <span>商品価格</span>
-            <strong id="manualItemUsd">$0.00</strong>
+            <span>送料加算後の総額</span>
+            <strong id="manualTotalUsd">$0.00</strong>
           </div>
           <div class="manual-result">
             <span>売上合計</span>
@@ -105,7 +105,7 @@
             <strong id="manualMargin">0.0%</strong>
           </div>
         </div>
-        <p>手動総額は購入者が払う「商品価格 + 送料」の合計です。送料$25を引いた商品価格も同時に表示します。</p>
+        <p>ここはeBayの商品価格を入力します。計算時は送料$25を自動で足して、購入者が払う総額ベースで利益を出します。</p>
       </section>
 
       <section class="panel table-panel ranking-panel">

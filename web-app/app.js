@@ -65,7 +65,7 @@ const els = {
   purchaseShipping: document.querySelector("#purchaseShipping"),
   extraCost: document.querySelector("#extraCost"),
   usdJpy: document.querySelector("#usdJpy"),
-  manualTotalUsd: document.querySelector("#manualTotalUsd"),
+  manualItemUsdInput: document.querySelector("#manualItemUsdInput"),
   filterInput: document.querySelector("#filterInput"),
   scenarioCards: document.querySelector("#scenarioCards"),
   soldRankingTable: document.querySelector("#soldRankingTable")
@@ -195,18 +195,18 @@ function breakEven() {
 }
 
 function calcManualSale() {
-  const totalSaleUsd = numeric("manualTotalUsd");
-  const itemSaleUsd = Math.max(0, totalSaleUsd - settings.shippingIncomeUsd);
+  const itemSaleUsd = numeric("manualItemUsdInput");
+  const totalSaleUsd = itemSaleUsd + settings.shippingIncomeUsd;
   const revenueJpy = Math.round(totalSaleUsd * settings.usdJpy);
   const feeJpy = revenueJpy * settings.feeRate;
   const profitJpy = Math.round(revenueJpy - feeJpy - totalCost(baseCosts()));
   const margin = revenueJpy > 0 ? profitJpy / revenueJpy : 0;
-  return { itemSaleUsd, revenueJpy, profitJpy, margin };
+  return { totalSaleUsd, revenueJpy, profitJpy, margin };
 }
 
 function updateManualSale() {
   const result = calcManualSale();
-  document.querySelector("#manualItemUsd").textContent = usd(result.itemSaleUsd);
+  document.querySelector("#manualTotalUsd").textContent = usd(result.totalSaleUsd);
   document.querySelector("#manualRevenueJpy").textContent = yen(result.revenueJpy);
   document.querySelector("#manualProfitJpy").textContent = yen(result.profitJpy);
   document.querySelector("#manualMargin").textContent = pct(result.margin);
@@ -288,7 +288,7 @@ async function init() {
   }
   els.modelSelect.innerHTML = soldRankingRows().map((item) => `<option value="${item.model}">${item.model} / ${item.listings}件</option>`).join("");
   els.destinationSelect.innerHTML = destinations.map((item) => `<option value="${item.label}">${item.label}</option>`).join("");
-  [els.modelSelect, els.destinationSelect, els.purchasePrice, els.purchaseShipping, els.extraCost, els.usdJpy, els.manualTotalUsd, els.filterInput].forEach((el) => {
+  [els.modelSelect, els.destinationSelect, els.purchasePrice, els.purchaseShipping, els.extraCost, els.usdJpy, els.manualItemUsdInput, els.filterInput].forEach((el) => {
     el.addEventListener("input", render);
     el.addEventListener("change", render);
   });
