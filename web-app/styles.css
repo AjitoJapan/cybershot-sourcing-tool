@@ -324,6 +324,8 @@ dd {
 
 .table-wrap {
   overflow-x: auto;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
 }
 
 .ranking-panel {
@@ -337,7 +339,8 @@ table {
 }
 
 .ranking-table {
-  min-width: 900px;
+  min-width: 760px;
+  table-layout: fixed;
 }
 
 th,
@@ -364,7 +367,59 @@ th:nth-child(2) {
 
 .ranking-table td:first-child,
 .ranking-table th:first-child {
-  width: 64px;
+  width: 42px;
+}
+
+.ranking-table td:nth-child(2),
+.ranking-table th:nth-child(2) {
+  width: 72px;
+}
+
+.ranking-table td:nth-child(3),
+.ranking-table th:nth-child(3),
+.ranking-table td:nth-child(4),
+.ranking-table th:nth-child(4) {
+  width: 96px;
+}
+
+.ranking-table td:nth-child(5),
+.ranking-table th:nth-child(5),
+.ranking-table td:nth-child(6),
+.ranking-table th:nth-child(6),
+.ranking-table td:nth-child(7),
+.ranking-table th:nth-child(7) {
+  width: 118px;
+}
+
+.ranking-table th:first-child,
+.ranking-table td:first-child,
+.ranking-table th:nth-child(2),
+.ranking-table td:nth-child(2) {
+  position: sticky;
+  z-index: 2;
+}
+
+.ranking-table th:first-child,
+.ranking-table td:first-child {
+  left: 0;
+}
+
+.ranking-table th:nth-child(2),
+.ranking-table td:nth-child(2) {
+  left: 42px;
+  box-shadow: 8px 0 12px rgba(18, 27, 41, 0.08);
+}
+
+.ranking-table th:first-child,
+.ranking-table th:nth-child(2) {
+  z-index: 3;
+  background: #243244;
+}
+
+.ranking-table td:first-child,
+.ranking-table td:nth-child(2) {
+  background: #fff;
+  font-weight: 800;
 }
 
 @media (max-width: 860px) {

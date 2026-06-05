@@ -230,10 +230,10 @@ function renderScenarios(model) {
     const statusClass = result.status === "BUY" ? "buy" : result.status === "要検討" ? "caution" : "skip";
     return `
       <article class="panel scenario">
-        <h2>${result.label}<span>総額 ${usd(result.totalSaleUsd)}</span></h2>
+        <h2>${result.label}<span>商品価格 ${usd(result.itemSaleUsd)}</span></h2>
         <div class="price">${yen(result.profitJpy)}</div>
         <div class="metrics">
-          <div class="metric"><span>商品価格</span><strong>${usd(result.itemSaleUsd)}</strong></div>
+          <div class="metric"><span>購入者総額</span><strong>${usd(result.totalSaleUsd)}</strong></div>
           <div class="metric"><span>売上合計</span><strong>${yen(result.revenueJpy)}</strong></div>
           <div class="metric"><span>粗利率</span><strong>${pct(result.margin)}</strong></div>
           <div class="metric"><span>上限仕入れ価格</span><strong>${yen(result.maxBuyJpy)}</strong></div>
