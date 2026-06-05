@@ -83,6 +83,10 @@ function mapSupabaseRow(row) {
     lowUsd: Number(row.low_usd || 0),
     highUsd: Number(row.high_usd || 0),
     avgShippingUsd: Number(row.avg_shipping_usd || 0),
+    avgFreeShippingTotalUsd: Number(row.avg_free_shipping_total_usd || 0),
+    freeShippingCount: Number(row.free_shipping_count || 0),
+    avgPaidShippingTotalUsd: Number(row.avg_paid_shipping_total_usd || 0),
+    paidShippingCount: Number(row.paid_shipping_count || 0),
     listings: Number(row.listings || 0),
     reliability: row.reliability || "Unknown",
     updatedAt: row.updated_at
@@ -134,6 +138,11 @@ function yen(value) {
 
 function usd(value) {
   return `$${Number(value || 0).toFixed(2)}`;
+}
+
+function usdOrDash(value, count) {
+  if (!count || !Number(value)) return "-";
+  return usd(value);
 }
 
 function pct(value) {
@@ -216,6 +225,10 @@ function updateSummary(model) {
   const be = breakEven();
   document.querySelector("#modelName").textContent = model.model;
   document.querySelector("#avgUsd").textContent = usd(model.avgUsd);
+  document.querySelector("#avgFreeShippingUsd").textContent = usdOrDash(model.avgFreeShippingTotalUsd, model.freeShippingCount);
+  document.querySelector("#avgFreeShippingCount").textContent = model.freeShippingCount ? `${model.freeShippingCount}件` : "";
+  document.querySelector("#avgPaidShippingUsd").textContent = usdOrDash(model.avgPaidShippingTotalUsd, model.paidShippingCount);
+  document.querySelector("#avgPaidShippingCount").textContent = model.paidShippingCount ? `${model.paidShippingCount}件` : "";
   document.querySelector("#rangeUsd").textContent = `${usd(model.lowUsd)} / ${usd(model.highUsd)}`;
   document.querySelector("#soldCount").textContent = `${model.listings}件`;
   document.querySelector("#reliability").textContent = model.reliability;
@@ -256,6 +269,8 @@ function renderSoldRanking() {
           <td>${item.model}</td>
           <td>${item.listings}件</td>
           <td>${usd(item.avgUsd)}</td>
+          <td>${usdOrDash(item.avgFreeShippingTotalUsd, item.freeShippingCount)}</td>
+          <td>${usdOrDash(item.avgPaidShippingTotalUsd, item.paidShippingCount)}</td>
           <td>${yen(scenarios[0].maxBuyJpy)}</td>
           <td>${yen(scenarios[1].maxBuyJpy)}</td>
           <td>${yen(scenarios[2].maxBuyJpy)}</td>

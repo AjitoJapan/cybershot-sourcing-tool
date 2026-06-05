@@ -181,6 +181,12 @@ dd {
   font-weight: 800;
 }
 
+dd small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .break-row + .break-row {
   margin-top: 10px;
 }
@@ -335,11 +341,11 @@ dd {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 760px;
+  min-width: 1000px;
 }
 
 .ranking-table {
-  min-width: 760px;
+  min-width: 1000px;
   table-layout: fixed;
 }
 
@@ -378,16 +384,20 @@ th:nth-child(2) {
 .ranking-table td:nth-child(3),
 .ranking-table th:nth-child(3),
 .ranking-table td:nth-child(4),
-.ranking-table th:nth-child(4) {
-  width: 96px;
-}
-
+.ranking-table th:nth-child(4),
 .ranking-table td:nth-child(5),
 .ranking-table th:nth-child(5),
 .ranking-table td:nth-child(6),
-.ranking-table th:nth-child(6),
+.ranking-table th:nth-child(6) {
+  width: 96px;
+}
+
 .ranking-table td:nth-child(7),
-.ranking-table th:nth-child(7) {
+.ranking-table th:nth-child(7),
+.ranking-table td:nth-child(8),
+.ranking-table th:nth-child(8),
+.ranking-table td:nth-child(9),
+.ranking-table th:nth-child(9) {
   width: 118px;
 }
 

@@ -117,11 +117,9 @@ async function updateModel({ model, client, soldScraperActorId, supabaseUrl, ser
     }
 
     const prices = soldItems.map((item) => item.totalUsd);
-    const shippingPrices = soldItems.map((item) => item.shippingUsd).filter((value) => Number.isFinite(value) && value >= 0);
     const metrics = buildMetrics({
       model,
       prices,
-      shippingPrices,
       soldItems
     });
 
@@ -172,12 +170,17 @@ async function runSoldScraper({ client, actorId, model }) {
   return items || [];
 }
 
-function buildMetrics({ model, prices, shippingPrices, soldItems }) {
+function buildMetrics({ model, prices, soldItems }) {
   const sorted = [...prices].sort((a, b) => a - b);
+  const freeShippingItems = soldItems.filter((item) => item.shippingUsd === 0);
+  const paidShippingItems = soldItems.filter((item) => item.shippingUsd > 0);
+  const shippingPrices = paidShippingItems.map((item) => item.shippingUsd);
   const avgUsd = round2(average(prices));
   const lowUsd = round2(percentile(sorted, 0.10));
   const highUsd = round2(percentile(sorted, 0.90));
   const avgShippingUsd = round2(shippingPrices.length ? average(shippingPrices) : 0);
+  const avgFreeShippingTotalUsd = round2(freeShippingItems.length ? average(freeShippingItems.map((item) => item.totalUsd)) : 0);
+  const avgPaidShippingTotalUsd = round2(paidShippingItems.length ? average(paidShippingItems.map((item) => item.totalUsd)) : 0);
   const listings = soldItems.length;
   const reliability = soldItems.length >= 30 ? "High" : soldItems.length >= 10 ? "Medium" : "Low";
   const rank = chooseRank({ soldItemsCount: soldItems.length, avgUsd });
@@ -189,6 +192,10 @@ function buildMetrics({ model, prices, shippingPrices, soldItems }) {
     low_usd: lowUsd,
     high_usd: highUsd,
     avg_shipping_usd: avgShippingUsd,
+    avg_free_shipping_total_usd: avgFreeShippingTotalUsd,
+    free_shipping_count: freeShippingItems.length,
+    avg_paid_shipping_total_usd: avgPaidShippingTotalUsd,
+    paid_shipping_count: paidShippingItems.length,
     sell_through: 0,
     listings,
     reliability,
