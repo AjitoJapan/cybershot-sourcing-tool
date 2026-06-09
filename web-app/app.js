@@ -47,7 +47,7 @@ const settings = {
   fixedFeeJpy: 0,
   packingJpy: 84.43,
   domesticShippingJpy: 0,
-  shippingIncomeUsd: 25,
+  shippingIncomeUsd: 0,
   targetProfitJpy: 5000,
   targetMargin: 0.25,
   cautionProfitJpy: 2500,
@@ -183,7 +183,7 @@ function totalCost(costs) {
 
 function calcScenario(model, scenario) {
   const totalSaleUsd = Number((model.avgUsd * scenario.factor).toFixed(2));
-  const itemSaleUsd = Number(Math.max(0, totalSaleUsd - settings.shippingIncomeUsd).toFixed(2));
+  const itemSaleUsd = totalSaleUsd;
   const revenueJpy = Math.round(totalSaleUsd * settings.usdJpy);
   const feeJpy = revenueJpy * settings.feeRate;
   const costs = baseCosts();
@@ -199,13 +199,12 @@ function breakEven() {
   const totalUsd = totalCost(costs) / (settings.usdJpy * (1 - settings.feeRate));
   return {
     totalUsd,
-    itemUsd: Math.max(0, totalUsd - settings.shippingIncomeUsd)
+    itemUsd: totalUsd
   };
 }
 
 function calcManualSale() {
-  const itemSaleUsd = numeric("manualItemUsdInput");
-  const totalSaleUsd = itemSaleUsd + settings.shippingIncomeUsd;
+  const totalSaleUsd = numeric("manualItemUsdInput");
   const revenueJpy = Math.round(totalSaleUsd * settings.usdJpy);
   const feeJpy = revenueJpy * settings.feeRate;
   const profitJpy = Math.round(revenueJpy - feeJpy - totalCost(baseCosts()));
@@ -243,10 +242,10 @@ function renderScenarios(model) {
     const statusClass = result.status === "BUY" ? "buy" : result.status === "要検討" ? "caution" : "skip";
     return `
       <article class="panel scenario">
-        <h2>${result.label}<span>商品価格 ${usd(result.itemSaleUsd)}</span></h2>
+        <h2>${result.label}<span>送料無料売価 ${usd(result.itemSaleUsd)}</span></h2>
         <div class="price">${yen(result.profitJpy)}</div>
         <div class="metrics">
-          <div class="metric"><span>購入者総額</span><strong>${usd(result.totalSaleUsd)}</strong></div>
+          <div class="metric"><span>購入者支払額</span><strong>${usd(result.totalSaleUsd)}</strong></div>
           <div class="metric"><span>売上合計</span><strong>${yen(result.revenueJpy)}</strong></div>
           <div class="metric"><span>粗利率</span><strong>${pct(result.margin)}</strong></div>
           <div class="metric"><span>上限仕入れ価格</span><strong>${yen(result.maxBuyJpy)}</strong></div>

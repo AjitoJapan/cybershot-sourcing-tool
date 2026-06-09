@@ -72,14 +72,14 @@
             <h2>赤字ライン</h2>
           </div>
           <div class="break-row">
-            <span>損益分岐総額</span>
+            <span>損益分岐売価</span>
             <strong id="breakEvenTotal">$0.00</strong>
           </div>
           <div class="break-row">
-            <span>損益分岐商品</span>
+            <span>送料無料売価</span>
             <strong id="breakEvenItem">$0.00</strong>
           </div>
-          <p>購入者が払う総額と、送料$25を別途取る場合の商品価格ラインです。</p>
+          <p>送料無料販売で、赤字にならないeBay売価ラインです。</p>
         </article>
       </section>
 
@@ -88,11 +88,11 @@
       <section class="panel manual-panel">
         <div class="section-title">
           <h2>手動売価 粗利計算</h2>
-          <span>商品単価 + 送料$25で即計算</span>
+          <span>送料無料のeBay売価で即計算</span>
         </div>
         <div class="manual-grid">
           <label class="manual-input">
-            手動商品価格 USD
+            手動 送料無料売価 USD
             <input id="manualItemUsdInput" type="number" min="0" step="0.01" placeholder="例: 145.00" />
           </label>
           <div class="manual-result manual-profit">
@@ -100,7 +100,7 @@
             <strong id="manualProfitJpy">¥0</strong>
           </div>
           <div class="manual-result">
-            <span>送料加算後の総額</span>
+            <span>購入者支払額</span>
             <strong id="manualTotalUsd">$0.00</strong>
           </div>
           <div class="manual-result">
@@ -112,7 +112,7 @@
             <strong id="manualMargin">0.0%</strong>
           </div>
         </div>
-        <p>ここはeBayの商品価格を入力します。計算時は送料$25を自動で足して、購入者が払う総額ベースで利益を出します。</p>
+        <p>ここは送料無料販売のeBay売価を入力します。入力した金額をそのまま購入者支払額として、CPASS送料などの原価を引いて利益を出します。</p>
       </section>
 
       <section class="panel table-panel ranking-panel">
