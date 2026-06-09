@@ -214,7 +214,6 @@ function calcManualSale() {
 
 function updateManualSale() {
   const result = calcManualSale();
-  document.querySelector("#manualTotalUsd").textContent = usd(result.totalSaleUsd);
   document.querySelector("#manualRevenueJpy").textContent = yen(result.revenueJpy);
   document.querySelector("#manualProfitJpy").textContent = yen(result.profitJpy);
   document.querySelector("#manualMargin").textContent = pct(result.margin);
@@ -245,7 +244,6 @@ function renderScenarios(model) {
         <h2>${result.label}<span>送料無料売価 ${usd(result.itemSaleUsd)}</span></h2>
         <div class="price">${yen(result.profitJpy)}</div>
         <div class="metrics">
-          <div class="metric"><span>購入者支払額</span><strong>${usd(result.totalSaleUsd)}</strong></div>
           <div class="metric"><span>売上合計</span><strong>${yen(result.revenueJpy)}</strong></div>
           <div class="metric"><span>粗利率</span><strong>${pct(result.margin)}</strong></div>
           <div class="metric"><span>上限仕入れ価格</span><strong>${yen(result.maxBuyJpy)}</strong></div>
