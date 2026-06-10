@@ -51,6 +51,32 @@
         </label>
       </section>
 
+      <section class="panel manual-panel">
+        <div class="section-title">
+          <h2>手動売価 粗利計算</h2>
+          <span>送料無料のeBay売価で即計算</span>
+        </div>
+        <div class="manual-grid">
+          <label class="manual-input">
+            手動 送料無料売価 USD
+            <input id="manualItemUsdInput" type="number" min="0" step="0.01" placeholder="例: 145.00" />
+          </label>
+          <div class="manual-result manual-profit">
+            <span>想定利益</span>
+            <strong id="manualProfitJpy">¥0</strong>
+          </div>
+          <div class="manual-result">
+            <span>売上合計</span>
+            <strong id="manualRevenueJpy">¥0</strong>
+          </div>
+          <div class="manual-result">
+            <span>粗利率</span>
+            <strong id="manualMargin">0.0%</strong>
+          </div>
+        </div>
+        <p>ここは送料無料販売のeBay売価を入力します。入力した金額をそのまま送料無料売価として、CPASS送料などの原価を引いて利益を出します。</p>
+      </section>
+
       <section class="summary-grid">
         <article class="panel model-card">
           <div class="section-title">
@@ -84,32 +110,6 @@
       </section>
 
       <section class="scenarios" id="scenarioCards"></section>
-
-      <section class="panel manual-panel">
-        <div class="section-title">
-          <h2>手動売価 粗利計算</h2>
-          <span>送料無料のeBay売価で即計算</span>
-        </div>
-        <div class="manual-grid">
-          <label class="manual-input">
-            手動 送料無料売価 USD
-            <input id="manualItemUsdInput" type="number" min="0" step="0.01" placeholder="例: 145.00" />
-          </label>
-          <div class="manual-result manual-profit">
-            <span>想定利益</span>
-            <strong id="manualProfitJpy">¥0</strong>
-          </div>
-          <div class="manual-result">
-            <span>売上合計</span>
-            <strong id="manualRevenueJpy">¥0</strong>
-          </div>
-          <div class="manual-result">
-            <span>粗利率</span>
-            <strong id="manualMargin">0.0%</strong>
-          </div>
-        </div>
-        <p>ここは送料無料販売のeBay売価を入力します。入力した金額をそのまま送料無料売価として、CPASS送料などの原価を引いて利益を出します。</p>
-      </section>
 
       <section class="panel table-panel ranking-panel">
         <div class="section-title">
