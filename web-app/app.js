@@ -145,6 +145,13 @@ function usdOrDash(value, count) {
   return usd(value);
 }
 
+function saleBasisUsd(model) {
+  if (model.freeShippingCount > 0 && Number(model.avgFreeShippingTotalUsd) > 0) {
+    return model.avgFreeShippingTotalUsd;
+  }
+  return model.avgUsd;
+}
+
 function pct(value) {
   return `${((value || 0) * 100).toFixed(1)}%`;
 }
@@ -182,7 +189,7 @@ function totalCost(costs) {
 }
 
 function calcScenario(model, scenario) {
-  const totalSaleUsd = Number((model.avgUsd * scenario.factor).toFixed(2));
+  const totalSaleUsd = Number((saleBasisUsd(model) * scenario.factor).toFixed(2));
   const itemSaleUsd = totalSaleUsd;
   const revenueJpy = Math.round(totalSaleUsd * settings.usdJpy);
   const feeJpy = revenueJpy * settings.feeRate;
